@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
-const tripadvisor = require('./tripadvisor');
+const tripadvisor = require('./scrappers/tripadvisor');
+const expedia = require('./scrappers/expedia');
 const async = require('async');
 const browser = require('./browser').browser;
 
@@ -36,33 +37,23 @@ const hoteles = [
 ];
 
 (async () => {
-  //   const result = await Promise.all(
-  //     hoteles.map(async hotel => {
-  //       const data = await tripadvisor.getData(hotel);
-  //       return {
-  //         hotel,
-  //         ...data
-  //       };
-  //     })
-  //   );
-
-  //   console.log(result);
   await browser.startBrowser();
+
   async.mapLimit(
     hoteles,
-    5,
+    1,
     async hotel => {
-      const data = await tripadvisor.getData(hotel);
-      console.log({hotel,data});
       return {
         hotel,
-        ...data
+        // tripadvisor: await tripadvisor.getData(hotel),
+        expedia: await expedia.getData(hotel)
       };
     },
-    (err, results) => {
+    async (err, results) => {
       if (err) throw err;
       // results is now an array of the response bodies
       console.log(results);
+      await browser.closeBrowser();
     }
   );
 })();
