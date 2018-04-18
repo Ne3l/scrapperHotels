@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
-const browser = require('../browser').browser;
-const utils = require('../utils');
+const { browser, cleanPreposiciones } = require('../utils');
 
 const SELECTORS = {
   TAB_HOTEL: '#tab-hotel-tab-hp',
@@ -34,9 +33,9 @@ const getData = async hotel => {
 
     const input = await page.$(SELECTORS.INPUT_HOTEL);
     await input.click();
-    await input.type(utils.cleanPreposiciones(hotel));
+    await input.type(cleanPreposiciones(hotel));
 
-    await page.waitForSelector(SELECTORS.SUGGESTED_HOTEL, { timeout: 3000 });
+    await page.waitForSelector(SELECTORS.SUGGESTED_HOTEL, { timeout: 5000 });
     await page.click(SELECTORS.SUGGESTED_HOTEL);
 
     await page.evaluate(sel => {
@@ -65,11 +64,12 @@ const getData = async hotel => {
       sel => document.querySelector(sel).innerText.match(/\d+/)[0],
       SELECTORS.NUMBER_REVIEWS
     );
-    await browser.closePage(page);
   } catch (e) {
     console.log(e);
     await page.screenshot({ path: `./errors/${hotel}.png` });
   }
+
+  await browser.closePage(page);
 
   return {
     precio,

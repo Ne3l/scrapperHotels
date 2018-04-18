@@ -4,7 +4,7 @@ class Browser {
   async startBrowser() {
     this.browser = await puppeteer.launch({
       // devtools: true,
-      headless: false,
+      headless: true,
       slowMo: 30
     });
     return this.browser;
