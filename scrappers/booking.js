@@ -1,13 +1,25 @@
 const puppeteer = require('puppeteer');
-const browser = require('../browser').browser;
+const { browser, cleanPreposiciones } = require('../utils');
 
-const SELECTOR_INPUT = 'input.typeahead_input';
-const SELECTOR_DATES = '.prw_datepickers_trip_search_dates';
+const SELECTORS = {
+  INPUT_HOTEL: '#ss',
+  SUGGESTED_HOTEL:
+    '#frm ul.c-autocomplete__list.sb-autocomplete__list.sb-autocomplete__list-with_photos.-visible > li:nth-child(1)',
 
-const SELECTOR_AUTOCOMPLETE =
-  '#BODY_BLOCK_JQUERY_REFLOW > div.ui_overlay.ui_modal.dt.no_x.no_padding.typeahead_overlay.prw_rup.prw_search_typeahead > div.body_text > div > ul > li.item.selected';
+  SELECT_ADULTS: '#group_adults',
+  INPUT_DATE_FROM_DAY: '#frm input[name="checkin_monthday"]',
+  INPUT_DATE_FROM_MONTH: '#frm input[name="checkin_month"]',
+  INPUT_DATE_FROM_YEAR: '#frm input[name="checkin_year"]',
+  INPUT_DATE_TO_DAY: '#frm input[name="checkout_monthday"]',
+  INPUT_DATE_TO_MONTH: '#frm input[name="checkout_month"]',
+  INPUT_DATE_TO_YEAR: '#frm input[name="checkout_year"]',
+  BUTTON_SEARCH:
+    '#frm > div.sb-searchbox__row.u-clearfix.-submit.sb-searchbox__footer.-last > div.sb-searchbox-submit-col.-submit-button > button',
 
-const SELECTOR_TITLE_DATE = '.dsdc-month-title';
+  PRICE: 'article[data-automation="pinnedHotel"] .actualPrice',
+  NUMBER_REVIEWS:
+    'article[data-automation="pinnedHotel"] .hotelSearchResultReviewTotal'
+};
 
 const getData = async hotel => {
   const page = await browser.newPage();
@@ -18,43 +30,59 @@ const getData = async hotel => {
     else request.continue();
   });
 
-  await page.goto('https://www.tripadvisor.es/');
+  await page.goto('https://www.booking.com');
 
   let puntuacion;
   let precio;
 
   try {
-    const input = await page.$(SELECTOR_INPUT);
+    const input = await page.$(SELECTORS.INPUT_HOTEL);
+
+    await page.click(SELECTORS.BUTTON_SEARCH);
+
     await input.click();
-    await input.type(hotel.replace(/DE/g, '').replace(/LA/g, ''));
+    await input.type(cleanPreposiciones(hotel));
 
-    await page.waitForSelector(SELECTOR_AUTOCOMPLETE);
-    await page.click(SELECTOR_AUTOCOMPLETE);
+    await page.waitForSelector(SELECTORS.SUGGESTED_HOTEL);
+    await page.click(SELECTORS.SUGGESTED_HOTEL);
 
-    const fechasContainer = await page.$(SELECTOR_DATES);
-    await fechasContainer.click();
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '01'),
+      SELECTORS.INPUT_DATE_FROM_DAY
+    );
 
-    let monthTitle = await page.evaluate(sel => {
-      return document.querySelectorAll(sel)[0].innerText;
-    }, SELECTOR_TITLE_DATE);
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '10'),
+      SELECTORS.INPUT_DATE_FROM_MONTH
+    );
 
-    while (monthTitle !== 'oct. de 2018') {
-      monthTitle = await page.evaluate(sel => {
-        return document.querySelectorAll(sel)[1].innerText;
-      }, SELECTOR_TITLE_DATE);
-      await page.click('.dsdc-next.single-chevron-right-circle');
-    }
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '2018'),
+      SELECTORS.INPUT_DATE_FROM_YEAR
+    );
 
-    await page.click('span[data-date="2018-9-1"]');
-    await page.click('span[data-date="2018-9-2"]');
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '02'),
+      SELECTORS.INPUT_DATE_TO_DAY
+    );
 
-    await page.click('.prw_ibex_trip_search_rooms_guests');
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '10'),
+      SELECTORS.INPUT_DATE_TO_MONTH
+    );
 
-    await page.click('.adults-picker .ui_icon.minus-circle');
+    await page.evaluate(sel => {
+      return (document.querySelector(sel).value = '2018');
+    }, SELECTORS.INPUT_DATE_TO_YEAR);
+
+    await page.evaluate(
+      sel => (document.querySelector(sel).value = '1'),
+      SELECTORS.SELECT_ADULTS
+    );
 
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle0' }),
-      page.click('#SUBMIT_HOTELS')
+      page.click(SELECTORS.BUTTON_SEARCH)
     ]);
 
     await page.waitForSelector('.overallRating');
@@ -75,10 +103,11 @@ const getData = async hotel => {
         10
       );
     });
-    await browser.closePage(page);
   } catch (e) {
     console.log(e);
     await page.screenshot({ path: `./errors/${hotel}.png` });
+  } finally {
+    await browser.closePage(page);
   }
 
   return {

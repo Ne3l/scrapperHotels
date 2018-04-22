@@ -1,37 +1,37 @@
 const puppeteer = require('puppeteer');
-const tripadvisor = require('./scrappers/tripadvisor');
-const expedia = require('./scrappers/expedia');
+const { tripadvisor, expedia, booking } = require('./scrappers');
 const async = require('async');
 const { browser, formatOutputCSV } = require('./utils');
 const fs = require('fs');
 
-// const hoteles = [
-//   'PARADOR DE LAS CAÑADAS DEL TEIDE',
-//   'PARADOR DE ARCOS DE LA FRONTERA',
-//   'PARADOR DE BIELSA MONTE PERDIDO',
-//   'PARADOR DE CAZORLA EL ADELANTADO',
-//   'PARADOR DE CERVERA DE PISUERGA',
-//   'PARADOR DE FERROL',
-//   'PARADOR DE FUENTE DE - RIO DEVA',
-//   'PARADOR DE GREDOS',
-//   'PARADOR DE MANZANARES'
-// ];
+const hoteles = [
+  'PARADOR DE LAS CAÑADAS DEL TEIDE',
+  'PARADOR DE ARCOS DE LA FRONTERA',
+  'PARADOR DE BIELSA MONTE PERDIDO',
+  'PARADOR DE CAZORLA EL ADELANTADO',
+  'PARADOR DE CERVERA DE PISUERGA',
+  'PARADOR DE FERROL',
+  'PARADOR DE FUENTE DE - RIO DEVA',
+  'PARADOR DE GREDOS',
+  'PARADOR DE MANZANARES'
+];
 
 (async () => {
-  const hoteles = fs
-    .readFileSync('hoteles.csv', { encoding: 'utf8' })
-    .split(',');
+  // const hoteles = fs
+  //   .readFileSync('hoteles.csv', { encoding: 'utf8' })
+  //   .split(',');
 
   await browser.startBrowser();
 
   async.mapLimit(
     hoteles,
-    5,
+    1,
     async hotel => {
       return {
         hotel,
         // tripadvisor: await tripadvisor.getData(hotel),
-        expedia: await expedia.getData(hotel)
+        // expedia: await expedia.getData(hotel),
+        booking: await booking.getData(hotel)
       };
     },
     async (err, results) => {
@@ -41,8 +41,8 @@ const fs = require('fs');
       const stringOutput = results
         .map(e => {
           return `${e.hotel},${formatOutputCSV(
-            e.expedia.precio
-          )},${formatOutputCSV(e.expedia.numReviews)}`;
+            e.booking.precio
+          )},${formatOutputCSV(e.booking.numReviews)}`;
         })
         .join('\n');
 

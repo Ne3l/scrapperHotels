@@ -67,9 +67,9 @@ const getData = async hotel => {
   } catch (e) {
     console.log(e);
     await page.screenshot({ path: `./errors/${hotel}.png` });
+  } finally {
+    await browser.closePage(page);
   }
-
-  await browser.closePage(page);
 
   return {
     precio,
