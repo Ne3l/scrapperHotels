@@ -16,9 +16,12 @@ const SELECTORS = {
   BUTTON_SEARCH:
     '#frm > div.sb-searchbox__row.u-clearfix.-submit.sb-searchbox__footer.-last > div.sb-searchbox-submit-col.-submit-button > button',
 
-  PRICE: 'article[data-automation="pinnedHotel"] .actualPrice',
+  PRICE:
+    '#hotellist_inner > div.sr_item.sr_item_new.sr_item_default.sr_property_block.sr_flex_layout.sr_item--highlighted.with_dates.sr_item__menu > div.sr_item_content.sr_item_content_slider_wrapper > div.sr_rooms_table_block.clearfix > div > table > tbody > tr > td.roomPrice.sr_discount > div > strong',
   NUMBER_REVIEWS:
-    'article[data-automation="pinnedHotel"] .hotelSearchResultReviewTotal'
+    '#hotellist_inner > div.sr_item.sr_item_new.sr_item_default.sr_property_block.sr_item_bs.sr_flex_layout.sr_item__menu > div.sr_item_content.sr_item_content_slider_wrapper > div.sr_property_block_main_row > div.sr_item_review_block > div > div > a:nth-child(1) > span.review-score-widget.review-score-widget__fabulous.review-score-widget__auto.review-score-widget__right.review-score-widget__20.js_sr_primary_review_widget.sr_main_score_badge.review-score-widget__highlight-review-count.sr_main_score_badge_force_blue > span.review-score-widget__body > span.review-score-widget__subtext',
+
+  CLOSE_CALENDAR_ICON: '.c2-calendar-close-button-icon'
 };
 
 const getData = async hotel => {
@@ -32,13 +35,11 @@ const getData = async hotel => {
 
   await page.goto('https://www.booking.com');
 
-  let puntuacion;
-  let precio;
+  let numReviews;
+  let price;
 
   try {
     const input = await page.$(SELECTORS.INPUT_HOTEL);
-
-    await page.click(SELECTORS.BUTTON_SEARCH);
 
     await input.click();
     await input.type(cleanPreposiciones(hotel));
@@ -60,6 +61,8 @@ const getData = async hotel => {
       sel => (document.querySelector(sel).value = '2018'),
       SELECTORS.INPUT_DATE_FROM_YEAR
     );
+
+    await page.click(SELECTORS.CLOSE_CALENDAR_ICON);
 
     await page.evaluate(
       sel => (document.querySelector(sel).value = '02'),
@@ -85,24 +88,15 @@ const getData = async hotel => {
       page.click(SELECTORS.BUTTON_SEARCH)
     ]);
 
-    await page.waitForSelector('.overallRating');
+    price = await page.evaluate(
+      sel => parseInt(document.querySelector(sel).innerText, 10),
+      SELECTORS.PRICE
+    );
 
-    puntuacion = await page.evaluate(sel => {
-      return document.querySelector('.overallRating').innerText;
-    });
-
-    await page.waitForSelector('.meta_inner .price');
-
-    precio = await page.evaluate(sel => {
-      return parseInt(
-        Array.from(document.querySelectorAll('.meta_inner .price'))
-          .filter(e => e.innerText)
-          .sort(
-            (a, b) => parseInt(a.innerText, 10) - parseInt(b.innerText, 10)
-          )[0].innerText,
-        10
-      );
-    });
+    numReviews = await page.evaluate(
+      sel => document.querySelector(sel).innerText.match(/\d+/)[0],
+      SELECTORS.NUMBER_REVIEWS
+    );
   } catch (e) {
     console.log(e);
     await page.screenshot({ path: `./errors/${hotel}.png` });
@@ -111,8 +105,8 @@ const getData = async hotel => {
   }
 
   return {
-    puntuacion,
-    precio
+    numReviews,
+    price
   };
 };
 

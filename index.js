@@ -41,7 +41,7 @@ const hoteles = [
       const stringOutput = results
         .map(e => {
           return `${e.hotel},${formatOutputCSV(
-            e.booking.precio
+            e.booking.price
           )},${formatOutputCSV(e.booking.numReviews)}`;
         })
         .join('\n');

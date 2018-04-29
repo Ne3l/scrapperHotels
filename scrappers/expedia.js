@@ -26,7 +26,7 @@ const getData = async hotel => {
   await page.goto('https://www.expedia.es/');
 
   let numReviews;
-  let precio;
+  let price;
 
   try {
     await page.click(SELECTORS.TAB_HOTEL);
@@ -55,7 +55,7 @@ const getData = async hotel => {
       page.click(SELECTORS.BUTTON_SEARCH)
     ]);
 
-    precio = await page.evaluate(
+    price = await page.evaluate(
       sel => parseInt(document.querySelector(sel).innerText, 10),
       SELECTORS.PRICE
     );
@@ -72,7 +72,7 @@ const getData = async hotel => {
   }
 
   return {
-    precio,
+    price,
     numReviews
   };
 };

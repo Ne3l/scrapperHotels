@@ -26,8 +26,8 @@ const getData = async hotel => {
 
   await page.goto('https://www.tripadvisor.es/');
 
-  let puntuacion;
-  let precio;
+  let score;
+  let price;
 
   try {
     const input = await page.$(SELECTORS.SELECTOR_INPUT);
@@ -65,13 +65,13 @@ const getData = async hotel => {
 
     await page.waitForSelector(SELECTORS.RATING);
 
-    puntuacion = await page.evaluate(sel => {
+    score = await page.evaluate(sel => {
       return document.querySelector(sel).innerText;
     }, SELECTORS.RATING);
 
     await page.waitForSelector(SELECTORS.PRICES);
 
-    precio = await page.evaluate(sel => {
+    price = await page.evaluate(sel => {
       return parseInt(
         Array.from(document.querySelectorAll(sel))
           .filter(e => e.innerText)
@@ -89,8 +89,8 @@ const getData = async hotel => {
   }
 
   return {
-    puntuacion,
-    precio
+    score,
+    price
   };
 };
 
